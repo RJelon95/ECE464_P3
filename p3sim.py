@@ -412,6 +412,32 @@ def basic_sim(circuit,cycle):
 
     return circuit
 
+#----------------------------------------------------------------------------------------------------------------------#
+#
+
+def faultGen(circuit, outputFile):
+    counter = 0
+
+    for x in circuit["INPUTS"][1]:
+
+        outputFile.write(x[5:] + "-SA-0" + "\n")
+        outputFile.write(x[5:] + "-SA-1" + "\n")
+        counter = counter + 2
+
+    for x in circuit["GATES"][1]:
+
+        outputFile.write(x[5:] + "-SA-0" + "\n")
+        outputFile.write(x[5:] + "-SA-1" + "\n")
+        counter = counter + 2
+
+        for y in circuit[x][1]:
+
+            outputFile.write(x[5:] + "-IN-" + y[5:] + "-SA-0" + "\n")
+            outputFile.write(x[5:] + "-IN-" + y[5:] + "-SA-1" + "\n")
+            counter = counter + 2
+
+    outputFile.write("\n# total faults: " + str(counter) + "\n")
+
 
 #----------------------------------------------------------------------------------------------------------------------#
 # Main function
@@ -453,7 +479,7 @@ def main():
         inputName=input()
 
         inputsnum=circuit["INPUT_WIDTH"][1] # to get the number of inputs
-        
+
         inputs=2**inputsnum # to get the number of input combinations for the given set of inputs
         if inputName == "":
             inputName=bin(0)[2:].zfill(inputsnum)
@@ -669,7 +695,22 @@ def main():
 
     print("\n*******************\n")
 
+    while True:
+        outputName = "f_list.txt"
+        print("\n Write output file: use " + outputName + "?" + " Enter to accept or type filename: ")
+        userInput = input()
+        
+        if userInput == "":
+            break
+        else:
+            outputName = os.path.join(script_dir, userInput)
+            break
 
+    outputFile = open(outputName, "w")
+    #printCkt(circuit)
+    outputFile.write("# " + cktFile + "\n# full SSA fault list\n\n")
+
+    faultGen(circuit, outputFile)
 
     outputFile.close
     #exit()
