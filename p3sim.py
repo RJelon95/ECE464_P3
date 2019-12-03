@@ -452,19 +452,20 @@ def main():
         print("\n Enter the test vector : ")
         inputName=input()
 
-        inputs=circuit["INPUT_WIDTH"][1]
-
+        inputsnum=circuit["INPUT_WIDTH"][1] # to get the number of inputs
+        
+        inputs=2**inputsnum # to get the number of input combinations for the given set of inputs
         if inputName == "":
-            inputName=bin(0)[2:].zfill(inputs)
+            inputName=bin(0)[2:].zfill(inputsnum)
             break
 
         elif int(inputName)>=0:
-            inputName=bin(int(inputName))[2:].zfill(inputs)
+            inputName=bin(int(inputName))[2:].zfill(inputsnum)
             break
 
         elif (int(inputName) < 0):
-            inputName = int(inputName)+inputs
-            inputName=bin(int(inputName))[2:].zfill(inputs)
+            num = int(inputName)+inputs #after converting into the negative num into a positive num
+            inputName=bin(int(num))[2:].zfill(inputsnum)
             break
         else:
             break
