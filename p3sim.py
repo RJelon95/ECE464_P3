@@ -163,7 +163,7 @@ def gateCalc(circuit, node, cycle):
 
     # If the node is a DFF, solve and return the output
     if circuit[node][0] == "DFF":
-        print(circuit[terminals[0]][3],"asdf")
+
         if circuit[terminals[0]][3] == '0':
             next_output='0'
         elif circuit[terminals[0]][3] == '1':
@@ -375,7 +375,7 @@ def basic_sim(circuit,cycle):
 
         # Check if the terminals have been accessed
         if circuit[curr][0]=="DFF":
-            print(1)
+            print("It is DFF")
 
         else:
             for term in circuit[curr][1]:
@@ -493,6 +493,9 @@ def main():
             num = int(inputName)+inputs #after converting into the negative num into a positive num
             inputName=bin(int(num))[2:].zfill(inputsnum)
             break
+        elif (int(inputName)<-inputs and int(inputName)>inputs):
+            print("Given Input is out of range")
+            break
         else:
             break
 
@@ -584,7 +587,7 @@ def main():
             if (key[0:5] == "wire_"):
                 circuit[key][2] = False
 
-    outputFile.write("Output value -> " + output + " (good)\n")
+    outputFile.write("Output value -> " + output + " (good)(Max Cycle to Min cycle)\n")
 
 #------------------------------------------------------------------------------------------------------------------#
 
@@ -665,11 +668,11 @@ def main():
         # For detection part of fault
         if(outputmain[cycledummy3] != output_faultmain[cycledummy3]):
             if(f_listName[1] == "IN"):
-                outputFile.write("Detected in the cycle number: "+str(cycledummy3)+ "\n"+ ": ")
+                outputFile.write("Fault Detected in the cycle number: "+str(cycledummy3)+ "\n"+ ": ")
                 outputFile.write(f_listNamedummy + " -> " + output_fault + "\n")
 
             elif(f_listName[1] == "SA"):
-                outputFile.write("Detected in the cycle number: "+str(cycledummy3)+ "\n"+ ": ")
+                outputFile.write("Fault Detected in the cycle number: "+str(cycledummy3)+ "\n"+ ": ")
                 outputFile.write(f_listNamedummy + " -> " + output_fault + "\n")
 
 
@@ -699,7 +702,7 @@ def main():
         outputName = "f_list.txt"
         print("\n Write output file: use " + outputName + "?" + " Enter to accept or type filename: ")
         userInput = input()
-        
+
         if userInput == "":
             break
         else:
@@ -711,6 +714,7 @@ def main():
     outputFile.write("# " + cktFile + "\n# full SSA fault list\n\n")
 
     faultGen(circuit, outputFile)
+
 
     outputFile.close
     #exit()
