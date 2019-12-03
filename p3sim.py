@@ -27,7 +27,7 @@ def printCkt(circuit):
 
 # FUNCTION: Reading in the Circuit gate-level netlist file:
 
-const=0
+d={} #
 def netRead(netName):
     # Opening the netlist file:
     netFile = open(netName, "r")
@@ -152,27 +152,16 @@ def netRead(netName):
 
     return circuit
 
-#---------------------------------------------------------------------------------------------------------------------#
-# Function: swaping with the previous value
-def swap(const,next_output):
-    temp=const
-    const=next_output
-    next_output=temp
-    return next_output
-
 # -------------------------------------------------------------------------------------------------------------------- #
 # FUNCTION: calculates the output value for each logic gate
 def gateCalc(circuit, node, cycle):
-    global const
+    global d
 
     # terminal will contain all the input wires of this logic gate (node)
 
     terminals = list(circuit[node][1])
 
     # If the node is a DFF, solve and return the output
-
-
-    print(circuit,"asd")
     if circuit[node][0] == "DFF":
         print(circuit[terminals[0]][3],"asdf")
         if circuit[terminals[0]][3] == '0':
@@ -184,18 +173,13 @@ def gateCalc(circuit, node, cycle):
         else:  # Should not be able to come here
             return "U"
 
-
-
         if cycle==1:
-            print(1,"abcd",next_output)
-            const=next_output
-            # print(const)
             circuit[node][3] = "U"
             return circuit
         else:
-            print(const,"efgh")
-            circuit[node][3]=swap(const,next_output)
-    # if cycle==1:
+            p=circuit[node][1] # to get the input of the DFF
+            circuit[node][3]=d[p[0]]
+            d[p[0]]=next_output
 
             return circuit
 
@@ -367,7 +351,7 @@ def inputRead(circuit, line):
 #---------------------------------------------------------------------------------------------------------------------#
 # FUNCTION: the actual simulation #
 def basic_sim(circuit,cycle):
-    global const
+    global d
 
     # QUEUE and DEQUEUE
     # Creating a queue, using a list, containing all of the gates in the circuit
@@ -413,20 +397,18 @@ def basic_sim(circuit,cycle):
             print("Progress: updating " + curr + " = " + str(circuit[curr][3]) + " as the output of " + circuit[curr][0] + " for:")
             for term in circuit[curr][1]:
                 print(term + " = " + str(circuit[term][3]))
-            print("\nPress Enter to Continue...")
-            input()
+            # print("\nPress Enter to Continue...")
+            # input()
 
         else:
             # If the terminals have not been accessed yet, append the current node at the end of the queue
             queue.append(curr)
 
-        print(circuit,"dhru")
-        if circuit[curr][0]=="DFF":
-            print(circuit[curr][1],circuit[curr],"vish")
-            k=circuit[curr][1][0]
-            print(k,circuit[k][3],"viv")
-            circuit[curr][3]=circuit[k][3]
-            const=circuit[curr][3]
+    for term in circuit:
+        if circuit[term][0]=="DFF":
+            inp=circuit[term][1][0] # inp is input of DFF
+            circuit[term][3]=circuit[inp][3]
+            d[inp] = circuit[term][3]
 
     return circuit
 
@@ -436,7 +418,6 @@ def basic_sim(circuit,cycle):
 
 def main():
     script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-    # userInput = 's27.bench'
     print("TV Generation\n")
     while True:
         cktFile = "s27.bench"
@@ -458,7 +439,7 @@ def main():
     cycle=input()
 
     if(cycle==""):
-        cycle=2
+        cycle=5
 
     print("\n Finished processing benchmark file and built netlist dictionary: \n")
 
@@ -474,7 +455,7 @@ def main():
         inputs=circuit["INPUT_WIDTH"][1]
 
         if inputName == "":
-            inputName=bin(1)[2:].zfill(inputs)
+            inputName=bin(0)[2:].zfill(inputs)
             break
 
         elif int(inputName)>=0:
@@ -489,7 +470,7 @@ def main():
             break
 
     while True:
-        print("\n enter the fault")
+        print("\n Enter the fault in the circuit:")
         userInput = input()
 
         if userInput == "":
@@ -516,8 +497,6 @@ def main():
     print("\n *** Simulating the" + userInput + " file and will output in" + outputName + "*** \n")
 
     outputFile = open(outputName, "w")
-
-
     output = ""
     outputFile.write("# fault sim result \n# circuit bench: " + cktFile + " \n# fault: " + f_listName + " \n# TV: " + inputName + "\n\n")
 
@@ -526,7 +505,7 @@ def main():
     # printCkt(circuit)
     # print(circuit)
     print("\n ---> Now ready to simulate INPUT = " + inputName)
-    circuit = inputRead(circuit, inputName)
+    # circuit = inputRead(circuit, inputName)
     # Uncomment the following line, for the neater display of the function and then comment out print(circuit)
     printCkt(circuit)
     # print(circuit)
@@ -536,8 +515,9 @@ def main():
     cycledummy1=cycle
     cycledummy2=cycle
 
-
+    outputmain={}
     while cycle:
+        circuit = inputRead(circuit, inputName)
 
         if circuit == -1:
             print("INPUT ERROR: INSUFFICIENT BITS")
@@ -556,7 +536,6 @@ def main():
 
         cycledummy3=cycledummy1-cycle+1
         circuit = basic_sim(circuit,cycledummy3)
-
         cycle=cycle-1
 
         print("\n *** Finished simulation - resulting circuit: \n")
@@ -569,9 +548,14 @@ def main():
             if not circuit[y][2]:
                 output = "NETLIST ERROR: OUTPUT LINE \"" + y + "\" NOT ACCESSED"
                 break
+            outputmain[cycledummy3]=str(circuit[y][3])
             output = str(circuit[y][3]) + output
 
         print("\n *** Summary of simulation: ")
+
+        for key in circuit:
+            if (key[0:5] == "wire_"):
+                circuit[key][2] = False
 
     outputFile.write("Output value -> " + output + " (good)\n")
 
@@ -586,70 +570,88 @@ def main():
             circuit_fault[key][3] = 'U'
     print(circuit_fault)
 
-
-    f_listNamedummy=f_listName
-    circuit_fault = inputRead(circuit_fault, inputName)
-    f_listName=f_listName.split("-")
-    f_listName[0]="wire_"+f_listName[0]
-
-    if(f_listName[1] == "IN"):
-        circuit_fault["faultWire"] = ["FAULT", "NONE", True, f_listName[4]]
-        for key in circuit_fault:
-            if(f_listName[0] == key[5:]):
-                Index = 0
-                for Input in circuit_fault[key][1]:
-                    if(f_listName[2] == Input[5:]):
-                        circuit_fault[key][1][Index] = "faultWire"
-                    Index += 1
-
-
-    elif(f_listName[1] == "SA"):
-        for key in circuit_fault:
-            if(f_listName[0] == key):
-               circuit_fault[key][3] = f_listName[2]
-               circuit_fault[key][2] = True
     # After each input line is finished, reset the circuit
 
     while cycledummy:
+        cyc=cycledummy2-cycledummy+1
+        if(cyc==1):    # If ruuning for the first time
+            f_listNamedummy=f_listName
+            circuit_fault = inputRead(circuit_fault, inputName)
+            print(f_listName)
+            f_listName=f_listName.split("-")
+            f_listName[0]="wire_"+f_listName[0]
 
-        print("\n *** Now resetting circuit back to unknowns... \n")
-        for key in circuit_fault:
-            if (key[0:5]=="wire_"):
-                circuit[key][2] = False
-                circuit[key][3] = 'U'
+            if(f_listName[1] == "IN"):
+                circuit_fault["faultWire"] = ["FAULT", "NONE", True, f_listName[4]]
+                for key in circuit_fault:
+                    if(f_listName[0] == key[5:]):
+                        Index = 0
+                        for Input in circuit_fault[key][1]:
+                            if(f_listName[2] == Input[5:]):
+                                circuit_fault[key][1][Index] = "faultWire"
+                            Index += 1
+
+
+            elif(f_listName[1] == "SA"):
+                for key in circuit_fault:
+                    if(f_listName[0] == key):
+                       circuit_fault[key][3] = f_listName[2]
+                       circuit_fault[key][2] = True
+
+        else:
+
+            circuit_fault = inputRead(circuit_fault, inputName)
+
+            if(f_listName[1] == "IN"):
+                circuit_fault["faultWire"] = ["FAULT", "NONE", True, f_listName[4]]
+                for key in circuit_fault:
+                    if(f_listName[0] == key[5:]):
+                        Index = 0
+                        for Input in circuit_fault[key][1]:
+                            if(f_listName[2] == Input[5:]):
+                                circuit_fault[key][1][Index] = "faultWire"
+                            Index += 1
+
+            elif(f_listName[1] == "SA"):
+                for key in circuit_fault:
+                    if(f_listName[0] == key):
+                       circuit_fault[key][3] = f_listName[2]
+                       circuit_fault[key][2] = True
+
         print("\n *** Running the Fault Test... \n")
 
         cycledummy3=cycledummy2-cycledummy+1
-        print(circuit_fault,"fault")
         circuit_fault = basic_sim(circuit_fault,cycledummy3)
-
-
+        cycledummy=cycledummy-1
 
         output_fault = ""
+        output_faultmain={}
         for y in circuit_fault["OUTPUTS"][1]:
             if circuit_fault[y][2] == False:
                 output_fault = "NETLIST ERROR: OUTPUT LINE \"" + y + "\" NOT ACCESSED"
                 break
+            output_faultmain[cycledummy3]=str(circuit_fault[y][3])
             output_fault = str(circuit_fault[y][3]) + output_fault
 
         outputFile.write("\n")
 
-
-        if(output[cycledummy-1] != output_fault):
+        # For detection part of fault
+        if(outputmain[cycledummy3] != output_faultmain[cycledummy3]):
             if(f_listName[1] == "IN"):
-
-                # detected=str(cycledummy) + detected
                 outputFile.write("Detected in the cycle number: "+str(cycledummy3)+ "\n"+ ": ")
                 outputFile.write(f_listNamedummy + " -> " + output_fault + "\n")
 
             elif(f_listName[1] == "SA"):
-                # detected=cycledummy + detected
                 outputFile.write("Detected in the cycle number: "+str(cycledummy3)+ "\n"+ ": ")
                 outputFile.write(f_listNamedummy + " -> " + output_fault + "\n")
-        cycledummy=cycledummy-1
+
+
+        print("\n *** Now resetting circuit back to unknowns... \n")
+        for key in circuit_fault:
+            if (key[0:5]=="wire_"):
+                circuit_fault[key][2] = False
 
         outputFile.write("\n")
-
 
     # After each input line is finished, reset the circuit
     print("\n *** Now resetting circuit back to unknowns... \n")
