@@ -1,0 +1,12 @@
+# fault sim result 
+# circuit bench: s27.bench 
+# fault: G0-SA-0 
+# TV: 1100
+
+Output value -> UUU (good)
+
+
+
+
+
+
